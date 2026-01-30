@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>عبدالله ونادين - لعبة جوال</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #1a1a2e;
+            touch-action: none;
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .stats-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(118, 75, 162, 0.9);
+            padding: 12px 15px;
+            border-radius: 12px;
+            color: white;
+            min-width: 140px;
+            pointer-events: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-size: 0.85em;
+        }
+
+        .stat-item {
+            margin-bottom: 8px;
+            text-align: right;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .hearts {
+            display: flex;
+            justify-content: flex-end;
+            gap: 2px;
+            margin-top: 3px;
+        }
+
+        .heart {
+            font-size: 1em;
+        }
+
+        /* Mobile Controls */
+        .mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+        }
+
+        .joystick-container {
+            width: 140px;
+            height: 140px;
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .joystick-stick {
+            width: 60px;
+            height: 60px;
+            background: rgba(118, 75, 162, 0.9);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .interact-btn {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff1744 100%);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            color: white;
+            font-size: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(255, 107, 157, 0.5);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .interact-btn:active {
+            transform: scale(0.9);
+        }
+
+        .interact-btn.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .look-pad {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 120px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8em;
+        }
+
+        .dialog-box {
+            position: absolute;
+            bottom: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 90%;
+            width: 90%;
+            pointer-events: auto;
+            display: none;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            text-align: right;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .dialog-text {
+            font-size: 1em;
+            line-height: 1.7;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .dialog-choices {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .choice-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            text-align: right;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+
+        .choice-btn:active {
+            transform: scale(0.98);
+        }
+
+        .notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(118, 75, 162, 0.95);
+            color: white;
+            padding: 18px 30px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            display: none;
+            pointer-events: auto;
+            text-align: center;
+            max-width: 80%;
+            z-index: 200;
+        }
+
+        .proximity-hint {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 107, 157, 0.95);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1.05em;
+            display: none;
+            pointer-events: none;
+            animation: pulse 1s infinite;
+            text-align: center;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 1000;
+        }
+
+        .loading-text {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .loading-bar {
+            width: 80%;
+            max-width: 300px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .hint-text {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            text-align: center;
+            max-width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-text">💕 جاري التحميل 💕</div>
+        <div class="loading-bar">
+            <div class="loading-progress" id="loadingProgress"></div>
+        </div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+    <div class="ui-overlay">
+        <div class="stats-panel">
+            <div class="stat-item">
+                <div class="stat-label">الحب</div>
+                <div class="hearts" id="hearts"></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">الشجاعة</div>
+                <div class="stat-value" id="courage">😰</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">المرحلة</div>
+                <div class="stat-value" id="stage" style="font-size: 0.9em;">البداية</div>
+            </div>
+        </div>
+
+        <div class="hint-text" id="hintText">
+            استخدم العصا للتحرك 🕹️
+        </div>
+
+        <div class="proximity-hint" id="proximityHint">
+            اضغط الزر الوردي 💕<br>للتحدث مع نادين!
+        </div>
+
+        <div class="mobile-controls">
+            <div class="joystick-container" id="joystickContainer">
+                <div class="joystick-base">
+                    <div class="joystick-stick" id="joystickStick"></div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="interact-btn" id="interactBtn">💕</button>
+            </div>
+        </div>
+
+        <div class="look-pad" id="lookPad">
+            👆<br>اسحب<br>للنظر
+        </div>
+
+        <div class="dialog-box" id="dialogBox">
+            <div class="dialog-text" id="dialogText"></div>
+            <div class="dialog-choices" id="dialogChoices"></div>
+        </div>
+
+        <div class="notification" id="notification"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game State
+        let gameState = {
+            love: 1,
+            courage: 1,
+            stage: 'البداية',
+            currentDialog: null,
+            metNadine: false,
+            cafeteriaScene: false,
+            finalScene: false
+        };
+
+        // Three.js Setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 10, 100);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ 
+            canvas: document.getElementById('game-canvas'), 
+            antialias: true 
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        directionalLight.position.set(50, 50, 50);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        // Ground
+        const groundGeometry = new THREE.PlaneGeometry(100, 100);
+        const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90EE90 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // University Building
+        function createBuilding(x, z, width, height, depth, color) {
+            const geometry = new THREE.BoxGeometry(width, height, depth);
+            const material = new THREE.MeshLambertMaterial({ color: color });
+            const building = new THREE.Mesh(geometry, material);
+            building.position.set(x, height / 2, z);
+            building.castShadow = true;
+            building.receiveShadow = true;
+            scene.add(building);
+            return building;
+        }
+
+        createBuilding(0, 0, 20, 10, 15, 0xD2691E);
+        createBuilding(-25, 0, 10, 8, 10, 0xCD853F);
+        createBuilding(25, 0, 10, 8, 10, 0xCD853F);
+        const cafeteria = createBuilding(0, -20, 12, 5, 8, 0xFF6B9D);
+
+        function createBench(x, z, color) {
+            const geometry = new THREE.BoxGeometry(2, 0.5, 0.8);
+            const material = new THREE.MeshLambertMaterial({ color: color });
+            const bench = new THREE.Mesh(geometry, material);
+            bench.position.set(x, 0.25, z);
+            bench.castShadow = true;
+            scene.add(bench);
+        }
+
+        createBench(-10, 10, 0x8B4513);
+        createBench(10, 10, 0x8B4513);
+        createBench(-10, -10, 0x8B4513);
+        createBench(10, -10, 0x8B4513);
+
+        function createTree(x, z) {
+            const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.3, 3, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.set(x, 1.5, z);
+            scene.add(trunk);
+
+            const leavesGeometry = new THREE.SphereGeometry(2, 8, 8);
+            const leavesMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
+            const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+            leaves.position.set(x, 4, z);
+            scene.add(leaves);
+        }
+
+        createTree(-15, -25);
+        createTree(15, -25);
+        createTree(-15, 25);
+        createTree(15, 25);
+        createTree(-30, 0);
+        createTree(30, 0);
+
+        // Player (Abdullah)
+        const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
+        const playerMaterial = new THREE.MeshLambertMaterial({ color: 0x4169E1 });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.set(0, 1, 30);
+        player.castShadow = true;
+        scene.add(player);
+
+        // Nadine
+        const nadineGeometry = new THREE.BoxGeometry(1, 2, 1);
+        const nadineMaterial = new THREE.MeshLambertMaterial({ color: 0xFF69B4 });
+        const nadine = new THREE.Mesh(nadineGeometry, nadineMaterial);
+        nadine.position.set(5, 1, 15);
+        nadine.castShadow = true;
+        scene.add(nadine);
+
+        const hairGeometry = new THREE.SphereGeometry(0.6, 8, 8);
+        const hairMaterial = new THREE.MeshLambertMaterial({ color: 0x4B0082 });
+        const hair = new THREE.Mesh(hairGeometry, hairMaterial);
+        hair.position.set(0, 1.2, 0);
+        nadine.add(hair);
+
+        // Camera setup
+        camera.position.set(0, 5, 35);
+        camera.lookAt(player.position);
+
+        // Mobile Controls
+        let joystickActive = false;
+        let joystickX = 0;
+        let joystickY = 0;
+        let cameraRotationY = 0;
+        let cameraRotationX = 0;
+        let lookPadActive = false;
+
+        const joystickContainer = document.getElementById('joystickContainer');
+        const joystickStick = document.getElementById('joystickStick');
+        const lookPad = document.getElementById('lookPad');
+        const interactBtn = document.getElementById('interactBtn');
+
+        // Joystick
+        joystickContainer.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            joystickActive = true;
+            updateJoystick(e.touches[0]);
+        });
+
+        joystickContainer.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (joystickActive) {
+                updateJoystick(e.touches[0]);
+            }
+        });
+
+        joystickContainer.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            joystickActive = false;
+            joystickX = 0;
+            joystickY = 0;
+            joystickStick.style.transform = 'translate(-50%, -50%)';
+        });
+
+        function updateJoystick(touch) {
+            const rect = joystickContainer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            let deltaX = touch.clientX - centerX;
+            let deltaY = touch.clientY - centerY;
+            
+            const maxDistance = rect.width / 2 - 30;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            if (distance > maxDistance) {
+                const ratio = maxDistance / distance;
+                deltaX *= ratio;
+                deltaY *= ratio;
+            }
+            
+            joystickX = deltaX / maxDistance;
+            joystickY = deltaY / maxDistance;
+            
+            joystickStick.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+        }
+
+        // Look Pad
+        lookPad.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            lookPadActive = true;
+        });
+
+        lookPad.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (lookPadActive && e.touches.length > 0) {
+                const deltaX = e.touches[0].movementX || 0;
+                const deltaY = e.touches[0].movementY || 0;
+                
+                cameraRotationY -= deltaX * 0.005;
+                cameraRotationX -= deltaY * 0.005;
+                cameraRotationX = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, cameraRotationX));
+            }
+        });
+
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+
+        lookPad.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (lookPadActive && e.touches.length > 0) {
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - lastTouchX;
+                const deltaY = touch.clientY - lastTouchY;
+                
+                if (lastTouchX !== 0) {
+                    cameraRotationY -= deltaX * 0.005;
+                    cameraRotationX -= deltaY * 0.005;
+                    cameraRotationX = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, cameraRotationX));
+                }
+                
+                lastTouchX = touch.clientX;
+                lastTouchY = touch.clientY;
+            }
+        });
+
+        lookPad.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            lookPadActive = true;
+            if (e.touches.length > 0) {
+                lastTouchX = e.touches[0].clientX;
+                lastTouchY = e.touches[0].clientY;
+            }
+        });
+
+        lookPad.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            lookPadActive = false;
+            lastTouchX = 0;
+            lastTouchY = 0;
+        });
+
+        // Interact Button
+        interactBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const distance = player.position.distanceTo(nadine.position);
+            if (distance < 3 && !gameState.currentDialog) {
+                interactWithNadine();
+            }
+        });
+
+        // Movement
+        const moveSpeed = 0.12;
+
+        function updatePlayer() {
+            if (joystickActive && !gameState.currentDialog) {
+                const forward = new THREE.Vector3();
+                const right = new THREE.Vector3();
+                
+                forward.set(
+                    -Math.sin(cameraRotationY),
+                    0,
+                    -Math.cos(cameraRotationY)
+                );
+                forward.normalize();
+                
+                right.crossVectors(new THREE.Vector3(0, 1, 0), forward).normalize();
+                
+                player.position.add(forward.multiplyScalar(-joystickY * moveSpeed));
+                player.position.add(right.multiplyScalar(-joystickX * moveSpeed));
+                
+                player.position.x = Math.max(-45, Math.min(45, player.position.x));
+                player.position.z = Math.max(-45, Math.min(45, player.position.z));
+            }
+
+            // Camera follows player
+            const cameraDistance = 10;
+            const cameraHeight = 4;
+            
+            camera.position.x = player.position.x - Math.sin(cameraRotationY) * cameraDistance;
+            camera.position.z = player.position.z - Math.cos(cameraRotationY) * cameraDistance;
+            camera.position.y = player.position.y + cameraHeight + cameraRotationX * 3;
+            
+            camera.lookAt(
+                player.position.x,
+                player.position.y + 1 + cameraRotationX,
+                player.position.z
+            );
+
+            // Check proximity to Nadine
+            const distance = player.position.distanceTo(nadine.position);
+            const proximityHint = document.getElementById('proximityHint');
+            
+            if (distance < 3 && !gameState.currentDialog) {
+                proximityHint.style.display = 'block';
+                interactBtn.classList.remove('disabled');
+            } else {
+                proximityHint.style.display = 'none';
+                interactBtn.classList.add('disabled');
+            }
+
+            if (distance < 10) {
+                nadine.lookAt(player.position);
+            }
+        }
+
+        // Teleport locations
+        const locations = {
+            firstMeeting: { player: { x: 0, z: 30 }, nadine: { x: 5, z: 15 } },
+            library: { player: { x: -20, z: -5 }, nadine: { x: -15, z: 0 } },
+            cafeteria: { player: { x: -5, z: -25 }, nadine: { x: 0, z: -18 } },
+            garden: { player: { x: 25, z: 20 }, nadine: { x: 20, z: 15 } },
+            exit: { player: { x: 0, z: 40 }, nadine: { x: 0, z: 35 } }
+        };
+
+        function teleportToLocation(locationKey) {
+            const location = locations[locationKey];
+            if (!location) return;
+
+            player.position.set(location.player.x, 1, location.player.z);
+            nadine.position.set(location.nadine.x, 1, location.nadine.z);
+
+            const notification = document.getElementById('notification');
+            let locationName = '';
+            
+            switch(locationKey) {
+                case 'library': locationName = 'انتقلت إلى المكتبة 📚'; break;
+                case 'cafeteria': locationName = 'انتقلت إلى الكافتيريا ☕'; break;
+                case 'garden': locationName = 'انتقلت إلى الحديقة 🌳'; break;
+                case 'exit': locationName = 'انتقلت إلى مخرج الجامعة 🚶'; break;
+            }
+            
+            if (locationName) {
+                notification.textContent = locationName;
+                notification.style.display = 'block';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 2000);
+            }
+        }
+
+        // Dialog System
+        const dialogs = {
+            firstMeeting: {
+                text: 'رأيت نادين تجلس بمفردها... قلبك ينبض بسرعة. هذه فرصتك!',
+                choices: [
+                    { text: '😊 "مرحباً... أنا عبدالله"', next: 'shy1', love: 1, courage: 1 },
+                    { text: '😰 تتجمد من الخجل وما تقدر تتكلم', next: 'frozen', love: 0, courage: -1 }
+                ]
+            },
+            shy1: {
+                text: 'نظرت إليك نادين وابتسمت: "أهلاً عبدالله! أنا نادين"\n\nوجهك احمر من الخجل... ما تعرف إيش تقول بعد!',
+                choices: [
+                    { text: '📚 "إ... إيه... المحاضرة... يعني... كانت... حلوة"', next: 'nervous', love: 1, courage: 0 },
+                    { text: '👋 "تشرفنا!" وتنصرف بسرعة من الإحراج', next: 'runAway', love: 0, courage: -1 }
+                ]
+            },
+            nervous: {
+                text: 'ضحكت نادين ضحكة لطيفة: "هههه توترك لطيف يا عبدالله 😊"\n\nاحمر وجهك أكثر! لكنها ما كانت تستهزئ، كانت صادقة.\n\n"بنشوفك المرة الجاية؟" سألت.\n\nوافقت برأسك... وأنت ما تصدق اللي صار!',
+                choices: [
+                    { text: '💕 تبتسم وتقول شكراً', next: 'progress1', love: 2, courage: 1 }
+                ]
+            },
+            frozen: {
+                text: 'وقفت قدامها مثل التمثال... ما طلع منك أي كلمة.\n\nابتسمت نادين ابتسامة خفيفة وراحت.\n\nضربت جبينك: "يا غبي!" 😰',
+                choices: [
+                    { text: '😔 تقرر تحاول مرة ثانية لاحقاً', next: 'tryAgain', love: 0, courage: 0 }
+                ]
+            },
+            runAway: {
+                text: 'هربت بسرعة! 🏃\n\nجلست على كرسي بعيد وأنت تضرب رأسك: "ليش هربت يا غبي؟!"',
+                choices: [
+                    { text: '😢 تحاول تتشجع للمرة القادمة', next: 'tryAgain', love: 0, courage: 0 }
+                ]
+            },
+            tryAgain: {
+                text: 'مرت عدة أيام... شفت نادين مرات كثيرة، لكن ما قدرت تكلمها.\n\nواليوم... قررت تتشجع مرة ثانية!',
+                choices: [
+                    { text: '💪 تقترب منها', next: 'firstMeeting', love: 0, courage: 1 }
+                ]
+            },
+            progress1: {
+                text: '✨ انتقلت إلى المكتبة! ✨\n\nمرت أسابيع... صرت تسلم على نادين كل ما تشوفها.\n\nلسا خجول، لكن تتحسن! 😊\n\nواليوم، لقيتها في المكتبة تقرأ كتاب...',
+                choices: [
+                    { text: '📚 "مرحباً نادين! شنو تقرين؟"', next: 'library', love: 1, courage: 1 }
+                ]
+            },
+            library: {
+                text: 'رفعت نادين نظرها من الكتاب وابتسمت:\n\n"عبدالله! أهلاً! أقرأ عن تاريخ الطب، مثير جداً! تبي تجلس؟" 😊\n\nجلست جنبها... قلبك ينبض بقوة لكن أحسن من قبل!',
+                choices: [
+                    { text: '😊 "أكيد! أنا أحب القراءة بعد"', next: 'libraryTalk', love: 1, courage: 1 }
+                ]
+            },
+            libraryTalk: {
+                text: 'تكلمتو عن الكتب والدراسة... كان حديث لطيف جداً.\n\nبعد شوي، قالت نادين: "يالله أروح الكافتيريا أجيب شاي، تبي تجي معي؟"\n\nهذه فرصتك!',
+                choices: [
+                    { text: '☕ "أكيد! نمشي"', next: 'cafeteria', love: 1, courage: 1 }
+                ]
+            },
+            cafeteria: {
+                text: '✨ انتقلت إلى الكافتيريا! ✨\n\nوصلتو للكافتيريا سوا... وقفت نادين عند الكاونتر وطلبت:\n\n"شاي بالحليب، لو سمحت"\n\nوصل دورك... إيش بتطلب؟',
+                choices: [
+                    { text: '☕ "أنا بعد... شاي بالحليب"', next: 'cafeteriaSuccess', love: 2, courage: 2 },
+                    { text: '😰 تخاف وتطلب شي ثاني', next: 'cafeteriaFail', love: 0, courage: -1 }
+                ]
+            },
+            cafeteriaSuccess: {
+                text: 'قلت بصوت واضح (رغم التوتر الخفيف): "أنا بعد... شاي بالحليب"\n\nالتفتت نادين وابتسمت ابتسامة واسعة: "ماشاء الله! صرت أشجع يا عبدالله! 😊"\n\nاحمر وجهك شوي، لكن ما توترت مثل قبل!\n\n"تعال نجلس هناك" قالت نادين.\n\nجلستو على طاولة مريحة وبدأتو تتكلمون... كان أحلى وقت! ❤️',
+                choices: [
+                    { text: '😊 "نادين... أنا سعيد إني تعرفت عليك"', next: 'gardenScene', love: 3, courage: 2 }
+                ]
+            },
+            cafeteriaFail: {
+                text: 'طلبت شي ثاني وابتعدت...\n\n"ليش ما طلبت نفس طلبها؟!" ندمت. 😔\n\nنادين جلست لوحدها... وأنت جلست بعيد تندم.',
+                choices: [
+                    { text: '😢 تحاول مرة ثانية في يوم ثاني', next: 'tryAgain', love: -1, courage: -1 }
+                ]
+            },
+            gardenScene: {
+                text: '✨ بعد الكافتيريا، مشيتو سوا للحديقة... ✨\n\nالجو كان جميل، والشمس بتغرب.\n\nجلستو على كرسي تحت شجرة...\n\nقالت نادين: "عبدالله... صراحة من أول يوم لاحظتك في المحاضرة. كنت تنظر لي وتستحي. كان شيء لطيف 😊"',
+                choices: [
+                    { text: '😳 "ص... صدق؟! كنتي تعرفين؟!"', next: 'confession', love: 1, courage: 0 }
+                ]
+            },
+            confession: {
+                text: 'ضحكت نادين: "أكيد! البنات يحسون بهالأشياء"\n\nثم نظرت في عينيك وقالت بجدية:\n\n"وصراحة... أنا كنت أنتظر إنك تتشجع وتكلمني. توترك وخجلك... كان لطيف ومميز" ❤️\n\nشعرت بسعادة ما شعرت فيها من قبل!',
+                choices: [
+                    { text: '💕 "نادين... أنا... أنا أحبك"', next: 'loveConfession', love: 2, courage: 3 }
+                ]
+            },
+            loveConfession: {
+                text: 'قلتها... أخيراً قلتها!\n\nسكتت نادين لثانية... ثم ابتسمت أجمل ابتسامة:\n\n"وأنا أحبك يا عبدالله... من زمان" 💕\n\nمسكت يدها... وجلستو تنظرون لغروب الشمس سوا.\n\nكل الخجل، كل التوتر، كل الإحراج... كان يستاهل.\n\nلأنك الحين... مع البنت اللي تحبها. ❤️',
+                choices: [
+                    { text: '🌅 تنظرون لغروب الشمس سوا...', next: 'success', love: 1, courage: 1 }
+                ]
+            },
+            success: {
+                text: '🎉 النهاية السعيدة 🎉\n\nبعد ذلك اليوم الجميل...\n\nصار عبدالله ونادين لا ينفصلان. درسوا سوا، تخرجوا سوا، وبقوا مع بعض.\n\nعبدالله الخجول... تشجع بسبب الحب.\n\nونادين... وجدت في خجله شيء مميز وجميل.\n\nالحب اللي بدأ بنظرة... صار قصة العمر. ❤️\n\n--- تهانينا! أنهيت اللعبة بنجاح! ---',
+                choices: [
+                    { text: '🔄 العب مرة ثانية', next: 'restart', love: 0, courage: 0 }
+                ]
+            }
+        };
+
+        function interactWithNadine() {
+            if (gameState.currentDialog) return;
+
+            let dialogKey = 'firstMeeting';
+            
+            if (gameState.metNadine && !gameState.cafeteriaScene) {
+                dialogKey = 'progress1';
+            }
+
+            showDialog(dialogKey);
+        }
+
+        function showDialog(dialogKey) {
+            if (dialogKey === 'restart') {
+                location.reload();
+                return;
+            }
+
+            const dialog = dialogs[dialogKey];
+            if (!dialog) return;
+
+            gameState.currentDialog = dialogKey;
+            
+            const dialogBox = document.getElementById('dialogBox');
+            const dialogText = document.getElementById('dialogText');
+            const dialogChoices = document.getElementById('dialogChoices');
+
+            dialogText.innerHTML = dialog.text;
+            dialogChoices.innerHTML = '';
+
+            dialog.choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.textContent = choice.text;
+                btn.onclick = () => {
+                    if (choice.love) gameState.love += choice.love;
+                    if (choice.courage) gameState.courage += choice.courage;
+                    
+                    gameState.love = Math.max(0, Math.min(5, gameState.love));
+                    gameState.courage = Math.max(0, Math.min(5, gameState.courage));
+                    
+                    updateStats();
+                    
+                    if (choice.next === 'progress1') gameState.metNadine = true;
+                    if (choice.next === 'cafeteria') gameState.cafeteriaScene = true;
+                    
+                    dialogBox.style.display = 'none';
+                    gameState.currentDialog = null;
+                    
+                    if (choice.next === 'progress1') {
+                        setTimeout(() => teleportToLocation('library'), 500);
+                    } else if (choice.next === 'cafeteria') {
+                        setTimeout(() => teleportToLocation('cafeteria'), 500);
+                    } else if (choice.next === 'gardenScene') {
+                        setTimeout(() => teleportToLocation('garden'), 500);
+                    }
+                    
+                    setTimeout(() => {
+                        showDialog(choice.next);
+                    }, choice.next === 'progress1' || choice.next === 'cafeteria' || choice.next === 'gardenScene' ? 2500 : 100);
+                };
+                dialogChoices.appendChild(btn);
+            });
+
+            dialogBox.style.display = 'block';
+        }
+
+        function updateStats() {
+            const heartsDiv = document.getElementById('hearts');
+            heartsDiv.innerHTML = '';
+            
+            for (let i = 0; i < 5; i++) {
+                const heart = document.createElement('span');
+                heart.className = 'heart';
+                heart.textContent = i < gameState.love ? '♥' : '♡';
+                heart.style.color = i < gameState.love ? '#ff6b9d' : '#ddd';
+                heartsDiv.appendChild(heart);
+            }
+
+            const courageEmojis = ['😰', '😐', '😊', '💪', '🔥'];
+            document.getElementById('courage').textContent = courageEmojis[gameState.courage] || '😰';
+            
+            let stage = 'البداية';
+            if (gameState.love >= 4) stage = 'الحب';
+            else if (gameState.cafeteriaScene) stage = 'الكافتيريا';
+            else if (gameState.metNadine) stage = 'التقدم';
+            document.getElementById('stage').textContent = stage;
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePlayer();
+            renderer.render(scene, camera);
+        }
+
+        // Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Loading
+        let progress = 0;
+        const loadingInterval = setInterval(() => {
+            progress += 10;
+            document.getElementById('loadingProgress').style.width = progress + '%';
+            
+            if (progress >= 100) {
+                clearInterval(loadingInterval);
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    updateStats();
+                    animate();
+                    
+                    const notification = document.getElementById('notification');
+                    notification.textContent = '! مرحباً بك يا عبدالله\nابحث عن نادين (الشخصية الوردية)\nواقترب منها 💕';
+                    notification.style.display = 'block';
+                    setTimeout(() => {
+                        notification.style.display = 'none';
+                    }, 4000);
+                }, 500);
+            }
+        }, 100);
+    </script>
+</body>
+</html>
